@@ -10019,7 +10019,7 @@ msgid "Confirm Email"
 msgstr ""
 
 #: openedx/core/djangoapps/user_api/views.py
-msgid "Please confirm your email."
+msgid "The email addresses do not match."
 msgstr ""
 
 #. Translators: This label appears above a field on the registration form

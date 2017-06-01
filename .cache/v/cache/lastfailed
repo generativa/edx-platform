@@ -1,0 +1,6 @@
+{
+  "openedx/core/djangoapps/user_api/tests/test_middleware.py": true, 
+  "openedx/core/djangoapps/user_api/tests/test_models.py": true, 
+  "openedx/core/djangoapps/user_api/tests/test_partition_schemes.py": true, 
+  "openedx/core/djangoapps/user_api/tests/test_views.py": true
+}

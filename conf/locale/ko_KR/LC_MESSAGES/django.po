@@ -9139,7 +9139,7 @@ msgid "Confirm Email"
 msgstr ""
 
 #: openedx/core/djangoapps/user_api/views.py
-msgid "The email addresses do not match."
+msgid "Please confirm your email."
 msgstr ""
 
 #. Translators: This label appears above a field on the registration form

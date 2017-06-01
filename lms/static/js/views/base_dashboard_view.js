@@ -1,9 +1,9 @@
 (function(define) {
     'use strict';
-    define(['jquery', 'underscore', 'backbone'],
-        function($, _, Backbone) {
+    define(['jquery', 'backbone'],
+        function($, Backbone) {
             var BaseDashboardView = Backbone.View.extend({
-                pubSub: $.extend({},Backbone.Events),
+                pubSub: $.extend({}, Backbone.Events)
             });
             return BaseDashboardView;
         });

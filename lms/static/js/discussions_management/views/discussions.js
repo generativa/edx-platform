@@ -4,15 +4,16 @@
         'js/discussions_management/views/divided_discussions_inline',
         'js/discussions_management/views/divided_discussions_course_wide',
         'edx-ui-toolkit/js/utils/html-utils',
-        'js/instructor_dashboard/base_dashboard_view',
+        'js/views/base_dashboard_view',
         'js/models/notification',
         'js/views/notification'
     ],
 
-        function($, _, Backbone, gettext, InlineDiscussionsView, CourseWideDiscussionsView, HtmlUtils, BaseDashboardView) {
+        function($, _, Backbone, gettext, InlineDiscussionsView,
+                 CourseWideDiscussionsView,
+                 HtmlUtils, BaseDashboardView) {
             /* global NotificationModel, NotificationView */
 
-            var hiddenClass = 'is-hidden';
             var cohort = 'cohort';
             var none = 'none';
             var enrollmentTrack = 'enrollment_track';
@@ -27,7 +28,7 @@
                     this.template = HtmlUtils.template($('#discussions-tpl').text());
                     this.context = options.context;
                     this.discussionSettings = options.discussionSettings;
-                    this.listenTo(this.pubSub, "cohorts:state", this.cohortStateUpdate, this)
+                    this.listenTo(this.pubSub, 'cohorts:state', this.cohortStateUpdate, this);
                 },
 
                 render: function() {
@@ -86,15 +87,15 @@
                     this.notification.render();
                 },
 
-                cohortStateUpdate: function(state){
+                cohortStateUpdate: function(state) {
                     if ($('.discussions-management').data('enrollment-track-count') <= 1) {
-                        this.showDiscussionManagement(state['is_cohorted']);
+                        this.showDiscussionManagement(state.is_cohorted);
                     }
-                    this.showCohortSchemeControl(state['is_cohorted']);
+                    this.showCohortSchemeControl(state.is_cohorted);
                 },
 
-                showDiscussionManagement: function(show){
-                    if (!show){
+                showDiscussionManagement: function(show) {
+                    if (!show) {
                         $('.btn-link.discussions_management').hide();
                         $('#discussions_management').hide();
                     } else {
@@ -103,9 +104,8 @@
                     }
                 },
 
-                showCohortSchemeControl: function(show){
-                    debugger
-                    if(!show){
+                showCohortSchemeControl: function(show) {
+                    if(!show) {
                         $('.division-scheme-item.cohort').hide();
                     } else {
                         $('.division-scheme-item.cohort').removeAttr('style');
@@ -177,9 +177,9 @@
 
                 hideTopicNav: function(selectedScheme, topicNav) {
                     if (selectedScheme === none) {
-                        topicNav.addClass(hiddenClass);
+                        topicNav.hide();
                     } else {
-                        topicNav.removeClass(hiddenClass);
+                        topicNav.show();
                     }
                 },
 

@@ -518,6 +518,29 @@ class TestProgramProgressMeter(TestCase):
         meter = ProgramProgressMeter(self.user)
         self.assertEqual(meter.completed_programs, [program['uuid']])
 
+    @ddt.data(
+        ('honor', 'verified', False),
+        ('verified', 'verified', True),
+        ('honor', 'professional', False),
+        ('professional', 'professional', True),
+        ('audit', 'verified', False),
+        ('audit', 'professional', False)
+    )
+    @ddt.unpack
+    @mock.patch(UTILS_MODULE + '.ProgramProgressMeter.completed_course_runs', new_callable=mock.PropertyMock)
+    def test_is_course_complete(self, certificate_type, course_type, is_completed, mock_completed_course_runs,
+                                mock_get_programs):
+        course_run_key = generate_course_run_key()
+        course = CourseFactory(course_runs=[
+            CourseRunFactory(key=course_run_key, type=course_type),
+        ])
+        program = ProgramFactory(courses=[course])
+        mock_get_programs.return_value = [program]
+        self._create_enrollments(course_run_key)
+        meter = ProgramProgressMeter(self.user)
+        mock_completed_course_runs.return_value = [{'course_run_id': course_run_key, 'type': certificate_type}]
+        self.assertEqual(meter._is_course_complete(course), is_completed)
+
 
 @ddt.ddt
 @override_settings(ECOMMERCE_PUBLIC_URL_ROOT=ECOMMERCE_URL_ROOT)

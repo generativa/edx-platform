@@ -266,7 +266,7 @@ class ProgramProgressMeter(object):
                 # count towards completion of a course in a program). This may change
                 # in the future to make use of the more rigid set of "applicable seat
                 # types" associated with each program type in the catalog.
-                'type': course_run['type'],
+                'type': 'verified' if course_run['type'] == 'credit' else course_run['type'],
             }
 
         return any(reshape(course_run) in self.completed_course_runs for course_run in course['course_runs'])

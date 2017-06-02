@@ -1247,12 +1247,6 @@
     flex-direction: column;
     justify-content: space-between;
 
-    .division-scheme-items {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-    }
-
     .division-scheme {
       font-size: 18px;
     }
@@ -1260,7 +1254,15 @@
     .division-scheme-item {
       padding-left: 1%;
       padding-right: 1%;
-      min-width: 30%;
+      float: left;
+    }
+
+    .three-column-layout {
+       max-width: 33%;
+    }
+
+    .two-column-layout {
+       max-width: 50%;
     }
 
     .field-message {

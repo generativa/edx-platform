@@ -4,11 +4,12 @@
         'js/discussions_management/views/divided_discussions_inline',
         'js/discussions_management/views/divided_discussions_course_wide',
         'edx-ui-toolkit/js/utils/html-utils',
+        'edx-ui-toolkit/js/utils/string-utils',
         'js/models/notification',
         'js/views/notification'
     ],
 
-        function($, _, Backbone, gettext, InlineDiscussionsView, CourseWideDiscussionsView, HtmlUtils) {
+        function($, _, Backbone, gettext, InlineDiscussionsView, CourseWideDiscussionsView, HtmlUtils, StringUtils) {
             /* global NotificationModel, NotificationView */
 
             var hiddenClass = 'is-hidden';
@@ -28,19 +29,17 @@
                 },
 
                 render: function() {
-                    var selectedScheme, topicNav;
+                    var numberAvailableSchemes = this.discussionSettings.attributes.available_division_schemes.length;
                     HtmlUtils.setHtml(this.$el, this.template({
-                        availableSchemes: this.getDivisionSchemeData(this.discussionSettings.attributes.division_scheme)
+                        availableSchemes: this.getDivisionSchemeData(this.discussionSettings.attributes.division_scheme), //  eslint-disable-line max-len
+                        layoutClass: numberAvailableSchemes === 1 ? 'two-column-layout' : 'three-column-layout'
                     }));
-                    selectedScheme = this.getSelectedScheme();
-                    topicNav = this.getTopicNav();
-                    this.hideTopicNav(selectedScheme, topicNav);
-                    this.showDiscussionTopics();
+                    this.updateTopicVisibility(this.getSelectedScheme(), this.getTopicNav());
+                    this.renderTopics();
                     return this;
                 },
 
                 getDivisionSchemeData: function(selectedScheme) {
-                    var self = this;
                     return [
                         {
                             key: none,
@@ -54,32 +53,30 @@
                             displayName: gettext('Enrollment Tracks'),
                             descriptiveText: gettext('Use enrollment tracks as the basis for dividing discussions. All learners, regardless of their enrollment track, see the same discussion topics, but within divided topics, only learners who are in the same enrollment track see and respond to each others’ posts.'), //  eslint-disable-line max-len
                             selected: selectedScheme === enrollmentTrack,
-                            enabled: self.isSchemeAvailable(enrollmentTrack) || selectedScheme === enrollmentTrack
+                            enabled: this.isSchemeAvailable(enrollmentTrack) || selectedScheme === enrollmentTrack
                         },
                         {
                             key: cohort,
                             displayName: gettext('Cohorts'),
                             descriptiveText: gettext('Use cohorts as the basis for dividing discussions. All learners, regardless of cohort, see the same discussion topics, but within divided topics, only members of the same cohort see and respond to each others’ posts. '), //  eslint-disable-line max-len
                             selected: selectedScheme === cohort,
-                            enabled: self.isSchemeAvailable(cohort) || selectedScheme === cohort
+                            enabled: this.isSchemeAvailable(cohort) || selectedScheme === cohort
                         }
 
                     ];
                 },
 
                 isSchemeAvailable: function(scheme) {
-                    var self = this;
-                    return self.discussionSettings.attributes.available_division_schemes.indexOf(scheme) !== -1;
+                    return this.discussionSettings.attributes.available_division_schemes.indexOf(scheme) !== -1;
                 },
 
                 showMessage: function(message, type) {
-                    var self = this,
-                        model = new NotificationModel({type: type || 'confirmation', title: message});
+                    var model = new NotificationModel({type: type || 'confirmation', title: message});
                     this.removeNotification();
                     this.notification = new NotificationView({
                         model: model
                     });
-                    self.$('.division-scheme-container').prepend(this.notification.$el);
+                    this.$('.division-scheme-container').prepend(this.notification.$el);
                     this.notification.render();
                 },
 
@@ -100,21 +97,19 @@
                 divisionSchemeChanged: function() {
                     var selectedScheme = this.getSelectedScheme(),
                         topicNav = this.getTopicNav(),
-                        messageSpan = this.$('.division-scheme-message'),
                         fieldData = {
                             division_scheme: selectedScheme
                         };
 
-                    this.hideTopicNav(selectedScheme, topicNav);
-                    this.saveDivisionScheme(topicNav, fieldData);
-                    this.showSelectMessage(selectedScheme, messageSpan);
+                    this.updateTopicVisibility(selectedScheme, topicNav);
+                    this.saveDivisionScheme(topicNav, fieldData, selectedScheme);
                 },
 
-                saveDivisionScheme: function($element, fieldData) {
+                saveDivisionScheme: function($element, fieldData, selectedScheme) {
                     var self = this,
                         discussionSettingsModel = this.discussionSettings,
-                        saveOperation = $.Deferred(),
-                        showErrorMessage;
+                        showErrorMessage,
+                        details = '';
 
                     this.removeNotification();
                     showErrorMessage = function(message) {
@@ -124,9 +119,25 @@
                     discussionSettingsModel.save(
                         fieldData, {patch: true, wait: true}
                     ).done(function() {
-                        saveOperation.resolve();
+                        switch (selectedScheme) {
+                        case none:
+                            details = gettext('Discussion topics in the course are not divided.');
+                            break;
+                        case enrollmentTrack:
+                            details = gettext('Any divided discussion topics are divided based on enrollment track.'); //  eslint-disable-line max-len
+                            break;
+                        case cohort:
+                            details = gettext('Any divided discussion topics are divided based on cohort.');
+                            break;
+                        default:
+                            break;
+                        }
                         self.showMessage(
-                            gettext('Your changes have been saved.')
+                            StringUtils.interpolate(
+                                gettext('Your changes have been saved. {details}'),
+                                {details: details},
+                                true
+                            )
                         );
                     }).fail(function(result) {
                         var errorMessage = null,
@@ -138,15 +149,13 @@
                             // Ignore the exception and show the default error message instead.
                         }
                         if (!errorMessage) {
-                            errorMessage = gettext('We\'ve encountered an error. ' +
-                                'Refresh your browser and then try again.');
+                            errorMessage = gettext('We have encountered an error. Refresh your browser and then try again.'); //  eslint-disable-line max-len
                         }
                         showErrorMessage(errorMessage);
-                        saveOperation.reject();
                     });
                 },
 
-                hideTopicNav: function(selectedScheme, topicNav) {
+                updateTopicVisibility: function(selectedScheme, topicNav) {
                     if (selectedScheme === none) {
                         topicNav.addClass(hiddenClass);
                     } else {
@@ -154,27 +163,11 @@
                     }
                 },
 
-                showSelectMessage: function(selectedScheme, messageSpan) {
-                    switch (selectedScheme) {
-                    case none:
-                        messageSpan.text(gettext('Discussion topics in the course are not divided.'));
-                        break;
-                    case enrollmentTrack:
-                        messageSpan.text(gettext('Any divided discussion topics are divided based on enrollment track.')); //  eslint-disable-line max-len
-                        break;
-                    case cohort:
-                        messageSpan.text(gettext('Any divided discussion topics are divided based on cohort.'));
-                        break;
-                    default:
-                        break;
-                    }
-                },
-
                 getSectionCss: function(section) {
                     return ".instructor-nav .nav-item [data-section='" + section + "']";
                 },
 
-                showDiscussionTopics: function() {
+                renderTopics: function() {
                     var dividedDiscussionsElement = this.$('.discussions-nav');
                     if (!this.CourseWideDiscussionsView) {
                         this.CourseWideDiscussionsView = new CourseWideDiscussionsView({
